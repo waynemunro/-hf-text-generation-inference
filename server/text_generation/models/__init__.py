@@ -10,6 +10,7 @@ from text_generation.models.seq2seq_lm import Seq2SeqLM
 from text_generation.models.galactica import Galactica, GalacticaSharded
 from text_generation.models.santacoder import SantaCoder
 from text_generation.models.gpt_neox import GPTNeox, GPTNeoxSharded
+from text_generation.models.opt import OPT, OPTSharded
 
 __all__ = [
     "Model",
@@ -17,7 +18,13 @@ __all__ = [
     "BLOOMSharded",
     "CausalLM",
     "Seq2SeqLM",
+    "Galactica",
+    "GalacticaSharded",
     "SantaCoder",
+    "GPTNeox",
+    "GPTNeoxSharded",
+    "OPT",
+    "OPTSharded",
     "get_model",
 ]
 
@@ -34,7 +41,14 @@ def get_model(
 ) -> Model:
     config = AutoConfig.from_pretrained(model_id, revision=revision)
 
-    if config.model_type == "bloom":
+    if model_id.startswith("facebook/galactica"):
+        if sharded:
+            return GalacticaSharded(model_id, revision, quantize=quantize)
+        else:
+            return Galactica(model_id, revision, quantize=quantize)
+    elif "santacoder" in model_id:
+        return SantaCoder(model_id, revision, quantize)
+    elif config.model_type == "bloom":
         if sharded:
             return BLOOMSharded(model_id, revision, quantize=quantize)
         else:
@@ -44,13 +58,11 @@ def get_model(
             return GPTNeoxSharded(model_id, revision, quantize=quantize)
         else:
             return GPTNeox(model_id, revision, quantize=quantize)
-    elif model_id.startswith("facebook/galactica"):
+    elif config.model_type == "opt":
         if sharded:
-            return GalacticaSharded(model_id, revision, quantize=quantize)
+            return OPTSharded(model_id, revision, quantize=quantize)
         else:
-            return Galactica(model_id, revision, quantize=quantize)
-    elif "santacoder" in model_id:
-        return SantaCoder(model_id, revision, quantize)
+            return OPT(model_id, revision, quantize=quantize)
     else:
         if sharded:
             raise ValueError("sharded is not supported for AutoModel")
